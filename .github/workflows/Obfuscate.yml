@@ -1,12 +1,13 @@
 name: Build and Obfuscate BPB Panel
 
 on:
+  workflow_dispatch:
   push:
     branches:
       - main
   schedule:
-    # 每天凌晨1:00运行
     - cron: "0 1 * * *"
+      timezone: "Asia/Shanghai"
 
 permissions:
   contents: write
@@ -22,17 +23,15 @@ jobs:
       - name: 设置 Node.js 环境
         uses: actions/setup-node@v4
         with:
-          node-version: "latest"
+          node-version: "22"
 
       - name: 安装依赖项
-        run: |
-          npm install -g javascript-obfuscator
+        run: npm install -g javascript-obfuscator
 
-      - name: 下载 BPB worker.js
-        run: |
-          wget -O origin.js https://raw.githubusercontent.com/bia-pain-bache/BPB-Worker-Panel/main/build/unobfuscated-worker.js
+      - name: 下载最新 BPB worker.js
+        run: curl -L "https://github.com/bia-pain-bache/BPB-Worker-Panel/releases/latest/download/worker.js" -o origin.js
 
-      - name: 混淆 BPB worker.js
+      - name: 混淆为 Pages _worker.js
         run: |
           javascript-obfuscator origin.js --output _worker.js \
             --compact true \
@@ -41,7 +40,7 @@ jobs:
             --identifier-names-generator mangled \
             --rename-globals false \
             --string-array true \
-            --string-array-encoding 'rc4' \
+            --string-array-encoding rc4 \
             --string-array-threshold 0.75 \
             --transform-object-keys true \
             --unicode-escape-sequence true
@@ -50,6 +49,4 @@ jobs:
         uses: stefanzweifel/git-auto-commit-action@v5
         with:
           branch: main
-          commit_message: ':arrow_up: 更新最新的 BPB 面板'
-          commit_author: 'github-actions[bot] <github-actions[bot]@users.noreply.github.com>'
-          push_options: '--set-upstream'
+          commit_message: ":arrow_up: 更新最新的 BPB 面板"
